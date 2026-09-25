@@ -1,0 +1,158 @@
+predicate_catalog: A11-CLI-PREDICATES.v1
+status: FROZEN_SPECIFICATION
+result_enumeration:
+  - PASS
+  - FAIL
+  - UNVERIFIABLE
+
+global_rules:
+  retained_raw_evidence_required: true
+  verifier_recomputes_verification_critical_digests: true
+  recorded_values_are_claims_until_recomputed: true
+  fail_is_not_pass: true
+  unverifiable_is_not_pass: true
+  self_authentication_permitted: false
+
+predicates:
+
+  - predicate_id: A11.CLI.REJECTION_NON_MUTATION.v1
+    purpose: >
+      Establish whether rejection preserved the byte content of an
+      already-existing target artifact.
+    applicability:
+      filesystem.before.exists: true
+      process.exit_code_expected: 2
+    required_raw_evidence:
+      - process.exit_code
+      - process.stdout.raw_bytes
+      - filesystem.before.raw_bytes
+      - filesystem.after.raw_bytes
+    evaluation:
+      - process.exit_code == 2
+      - len(process.stdout.raw_bytes) == 0
+      - filesystem.before.exists == true
+      - filesystem.after.exists == true
+      - sha256(filesystem.before.raw_bytes) == sha256(filesystem.after.raw_bytes)
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: REQUIRED_RAW_EVIDENCE_UNAVAILABLE_OR_UNTRUSTED
+
+  - predicate_id: A11.CLI.REJECTION_NON_CREATION.v1
+    purpose: >
+      Establish that rejection did not create a target artifact that
+      was absent before execution.
+    applicability:
+      filesystem.before.exists: false
+      process.exit_code_expected: 2
+    required_raw_evidence:
+      - process.exit_code
+      - process.stdout.raw_bytes
+      - filesystem.before.exists
+      - filesystem.after.exists
+    evaluation:
+      - process.exit_code == 2
+      - len(process.stdout.raw_bytes) == 0
+      - filesystem.before.exists == false
+      - filesystem.after.exists == false
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: REQUIRED_RAW_EVIDENCE_UNAVAILABLE_OR_UNTRUSTED
+
+  - predicate_id: A11.CLI.STDOUT_EMPTY_ON_REJECTION.v1
+    purpose: Establish that rejected execution emits no stdout bytes.
+    applicability:
+      process.exit_code_expected: 2
+    required_raw_evidence:
+      - process.exit_code
+      - process.stdout.raw_bytes
+    evaluation:
+      - process.exit_code == 2
+      - len(process.stdout.raw_bytes) == 0
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: REQUIRED_RAW_EVIDENCE_UNAVAILABLE_OR_UNTRUSTED
+
+  - predicate_id: A11.CLI.RECEIPT_DIGEST_MATCH.v1
+    purpose: >
+      Establish that the receipt digest recorded in the receipt matches
+      the digest independently recomputed from the canonical receipt
+      preimage.
+    applicability:
+      receipt_identity.canonicalization: A11-CLI-EXECUTION-RECEIPT-C14N.v1
+    required_raw_evidence:
+      - canonical_receipt_preimage
+    evaluation:
+      - sha256(canonical_receipt_preimage) == receipt_identity.receipt_sha256
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: CANONICAL_PREIMAGE_UNAVAILABLE_OR_UNTRUSTED
+
+  - predicate_id: A11.CLI.OUTPUT_DIGEST_MATCH.v1
+    purpose: >
+      Establish that the recorded observed output digest matches the
+      digest independently recomputed from retained output bytes.
+    applicability:
+      output.observed_sha256: non_null
+    required_raw_evidence:
+      - output.raw_bytes
+    evaluation:
+      - sha256(output.raw_bytes) == output.observed_sha256
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: OUTPUT_RAW_BYTES_UNAVAILABLE_OR_UNTRUSTED
+
+  - predicate_id: A11.CLI.EXPECTED_OUTPUT_MATCH.v1
+    purpose: >
+      Establish that retained output bytes match the declared expected
+      output digest.
+    applicability:
+      output.expected_sha256: non_null
+      output.observed_sha256: non_null
+    required_raw_evidence:
+      - output.raw_bytes
+    evaluation:
+      - sha256(output.raw_bytes) == output.expected_sha256
+      - sha256(output.raw_bytes) == output.observed_sha256
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: OUTPUT_RAW_BYTES_UNAVAILABLE_OR_UNTRUSTED
+
+  - predicate_id: A11.CLI.RECORDED_RECOMPUTED_AGREEMENT.v1
+    purpose: >
+      Establish that every verification-critical recorded digest selected
+      by the verification profile agrees with independent recomputation.
+    applicability:
+      verification_profile: named_profile_required
+    required_raw_evidence:
+      - all_profile_designated_raw_evidence
+    evaluation:
+      - every_profile_designated_recorded_digest_equals_recomputed_digest
+    pass_condition: ALL
+    fail_condition: ANY_REQUIRED_COMPARISON_FALSE
+    unverifiable_condition: ANY_REQUIRED_PROFILE_EVIDENCE_UNAVAILABLE
+
+verification_policy:
+  receipt_verification_pass_requires:
+    - receipt_digest_match
+    - all_applicable_verification_critical_digest_predicates_pass
+    - all_applicable_required_behavioral_predicates_pass
+    - no_required_predicate_is_unverifiable
+  rejection_conditions:
+    - recorded_value_differs_from_recomputed_value
+    - required_predicate_result_is_FAIL
+    - required_predicate_result_is_UNVERIFIABLE
+    - required_raw_evidence_is_missing
+    - canonicalization_profile_mismatch
+  result_mapping:
+    all_required_pass: PASS
+    evidence_disproves_requirement: REJECTED
+    evidence_cannot_establish_requirement: UNVERIFIABLE
+
+scope_boundary:
+  these_predicates_do_not_establish:
+    - external_authority
+    - authorization
+    - regulatory_approval
+    - universal_correctness
+    - permanent_correctness
+    - baseline_advancement
