@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "A11-CLI-EXECUTION-RECEIPT.v1.schema.json",
+  "title": "A11 CLI Execution Receipt v1",
+  "description": "Structural contract only. This schema does not establish execution, truth, integrity, verification, authority, or assurance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receipt_format",
+    "receipt_identity",
+    "invocation",
+    "implementation",
+    "schema",
+    "fixture",
+    "test_case",
+    "harness",
+    "environment",
+    "process",
+    "filesystem",
+    "output",
+    "commit",
+    "predicates",
+    "lifecycle"
+  ],
+  "properties": {
+    "receipt_format": { "const": "A11-CLI-EXECUTION-RECEIPT.v1" },
+    "receipt_identity": { "$ref": "#/$defs/receiptIdentity" },
+    "invocation": { "$ref": "#/$defs/invocation" },
+    "implementation": { "$ref": "#/$defs/artifactIdentity" },
+    "schema": { "$ref": "#/$defs/artifactIdentity" },
+    "fixture": { "$ref": "#/$defs/fixtureIdentity" },
+    "test_case": { "$ref": "#/$defs/testCase" },
+    "harness": { "$ref": "#/$defs/artifactIdentity" },
+    "environment": { "$ref": "#/$defs/environment" },
+    "process": { "$ref": "#/$defs/process" },
+    "filesystem": { "$ref": "#/$defs/filesystem" },
+    "output": { "$ref": "#/$defs/output" },
+    "commit": { "$ref": "#/$defs/commit" },
+    "predicates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/predicateObservation" }
+    },
+    "lifecycle": { "$ref": "#/$defs/lifecycle" },
+    "verification": { "$ref": "#/$defs/verification" }
+  },
+  "$defs": {
+    "nonBlank": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "receiptIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id", "canonicalization", "receipt_sha256"],
+      "properties": {
+        "receipt_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "canonicalization": {
+          "const": "A11-CLI-EXECUTION-RECEIPT-C14N.v1"
+        },
+        "receipt_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "arguments", "working_directory", "started_at", "completed_at"],
+      "properties": {
+        "executable": { "$ref": "#/$defs/nonBlank" },
+        "arguments": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "working_directory": { "$ref": "#/$defs/nonBlank" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "artifactIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "version", "sha256"],
+      "properties": {
+        "artifact_id": { "$ref": "#/$defs/nonBlank" },
+        "version": { "$ref": "#/$defs/nonBlank" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "fixtureIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256"],
+      "properties": {
+        "artifact_id": { "$ref": "#/$defs/nonBlank" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "testCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vector_set_id", "vector_set_sha256", "case_id"],
+      "properties": {
+        "vector_set_id": { "$ref": "#/$defs/nonBlank" },
+        "vector_set_sha256": { "$ref": "#/$defs/sha256" },
+        "case_id": { "$ref": "#/$defs/nonBlank" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operating_system",
+        "architecture",
+        "runtime",
+        "runtime_version",
+        "dependency_lock_sha256"
+      ],
+      "properties": {
+        "operating_system": { "$ref": "#/$defs/nonBlank" },
+        "architecture": { "$ref": "#/$defs/nonBlank" },
+        "runtime": { "$ref": "#/$defs/nonBlank" },
+        "runtime_version": { "$ref": "#/$defs/nonBlank" },
+        "dependency_lock_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "stream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["byte_count", "sha256"],
+      "properties": {
+        "byte_count": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "process": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exit_code", "stdout", "stderr"],
+      "properties": {
+        "exit_code": { "type": "integer", "minimum": -255, "maximum": 255 },
+        "stdout": { "$ref": "#/$defs/stream" },
+        "stderr": { "$ref": "#/$defs/stream" }
+      }
+    },
+    "fsSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exists", "byte_count", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonBlank" },
+        "exists": { "type": "boolean" },
+        "byte_count": { "type": "integer", "minimum": 0 },
+        "sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "exists": { "const": false } } },
+          "then": {
+            "properties": {
+              "byte_count": { "const": 0 },
+              "sha256": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "exists": { "const": true } } },
+          "then": {
+            "properties": {
+              "sha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        }
+      ]
+    },
+    "filesystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": { "$ref": "#/$defs/fsSnapshot" },
+        "after": { "$ref": "#/$defs/fsSnapshot" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_sha256", "observed_sha256", "byte_count"],
+      "properties": {
+        "expected_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "observed_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "byte_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol_id", "operation", "result"],
+      "properties": {
+        "protocol_id": { "$ref": "#/$defs/nonBlank" },
+        "operation": { "$ref": "#/$defs/nonBlank" },
+        "result": {
+          "enum": [
+            "NOT_ATTEMPTED",
+            "COMMITTED",
+            "REJECTED",
+            "FAILED",
+            "UNVERIFIABLE"
+          ]
+        }
+      }
+    },
+    "predicateObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["predicate_id", "observed", "expected", "result"],
+      "properties": {
+        "predicate_id": { "$ref": "#/$defs/nonBlank" },
+        "observed": {},
+        "expected": {},
+        "result": {
+          "enum": ["PASS", "FAIL", "UNVERIFIABLE"]
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "enum": [
+            "RECEIPT_CREATED",
+            "RAW_OBSERVATIONS_BOUND",
+            "DIGESTS_RECOMPUTED",
+            "PREDICATES_EVALUATED",
+            "RECEIPT_VERIFIED"
+          ]
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verifier_id",
+        "verifier_version",
+        "verified_at",
+        "result"
+      ],
+      "properties": {
+        "verifier_id": { "$ref": "#/$defs/nonBlank" },
+        "verifier_version": { "$ref": "#/$defs/nonBlank" },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "result": {
+          "enum": ["PASS", "MISMATCH", "REJECTED", "UNVERIFIABLE"]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["verification"],
+        "properties": {
+          "verification": {
+            "properties": { "result": { "const": "PASS" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "lifecycle": {
+            "properties": { "state": { "const": "RECEIPT_VERIFIED" } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "lifecycle": {
+            "properties": { "state": { "const": "RECEIPT_VERIFIED" } }
+          }
+        }
+      },
+      "then": {
+        "required": ["verification"],
+        "properties": {
+          "verification": {
+            "properties": { "result": { "const": "PASS" } }
+          }
+        }
+      }
+    }
+  ]
+}
