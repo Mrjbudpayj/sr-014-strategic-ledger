@@ -1,0 +1,70 @@
+format_id: A11-CLI-EXECUTION-RECEIPT-C14N.v1
+status: FROZEN_SPECIFICATION
+purpose: >
+  Define deterministic canonical bytes for receipt hashing and
+  independent verifier recomputation.
+
+normative_rules:
+  encoding: UTF-8
+  line_ending: LF
+  unicode_normalization: NFC
+  object_key_order: lexicographic_by_unicode_codepoint
+  array_order: preserve_input_order
+  whitespace: no_insignificant_whitespace
+  json_number_form: RFC_8785_compatible
+  timestamp_form: RFC3339_with_UTC_Z
+  digest_algorithm: SHA-256
+  digest_text_form: "sha256:<64 lowercase hexadecimal characters>"
+
+receipt_digest:
+  field: receipt_identity.receipt_sha256
+  preimage:
+    exclude:
+      - receipt_identity.receipt_sha256
+  procedure:
+    - remove receipt_identity.receipt_sha256
+    - canonicalize the remaining receipt object under this profile
+    - encode canonical representation as UTF-8
+    - compute SHA-256
+    - serialize as "sha256:" followed by lowercase hexadecimal digest
+
+raw_stream_digests:
+  stdout:
+    source: exact_process_stdout_bytes
+    canonicalization: none
+    digest: SHA-256
+  stderr:
+    source: exact_process_stderr_bytes
+    canonicalization: none
+    digest: SHA-256
+  output:
+    source: exact_committed_output_bytes
+    canonicalization: none
+    digest: SHA-256
+
+filesystem_digests:
+  source: exact_target_file_bytes
+  canonicalization: none
+  digest: SHA-256
+  absent_target:
+    byte_count: 0
+    sha256: null
+
+verification_rule:
+  recorded_digest_is_claim_only: true
+  verifier_must_recompute_from_retained_raw_bytes: true
+  mismatch_result: MISMATCH
+  mismatch_is_verification_failure: true
+
+self_authentication:
+  permitted: false
+
+scope:
+  does_not_establish:
+    - execution
+    - raw_evidence_existence
+    - digest_truth
+    - verifier_independence
+    - predicate_satisfaction
+    - authority
+    - assurance
