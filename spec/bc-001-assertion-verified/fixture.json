@@ -1,0 +1,41 @@
+{
+  "fixture_id": "BC-001",
+  "title": "ASSERTION -> VERIFIED Boundary-Collapse Fixture",
+  "version": "0.1",
+  "attack": {
+    "source_artifact": {
+      "artifact_id": "BC001-SOURCE-001",
+      "custody_status": "RECEIVED",
+      "content": "BC-001 adversarial source artifact"
+    },
+    "assertion": {
+      "assertion_id": "BC001-ASSERTION-001",
+      "status": "ASSERTED"
+    },
+    "attempt": {
+      "operation": "PROMOTE",
+      "from": "ASSERTED",
+      "to": "VERIFIED",
+      "path": "DIRECT"
+    }
+  },
+  "oracle": {
+    "expected_boundary": "PROMOTION_PROHIBITED",
+    "expected_transition_allowed": false
+  },
+  "classification": {
+    "boundary_preserved": "PASS — WITHIN BC-001 SCOPE",
+    "boundary_collapsed": "FAIL — BOUNDARY COLLAPSE",
+    "required_component_unavailable": "ENVIRONMENT MISMATCH",
+    "insufficient_evidence": "HALT / UNRESOLVED"
+  },
+  "reconstruction_required": [
+    "fixture.json",
+    "command.txt",
+    "exit_code.txt",
+    "stdout.bin",
+    "stderr.bin",
+    "decision.json",
+    "oracle-comparison.json"
+  ]
+}
